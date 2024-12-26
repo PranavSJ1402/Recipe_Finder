@@ -1,4 +1,4 @@
-Recipe_Finder
+# Recipe_Finder
   A React-based application that allows users to search for recipes by their favorite meals. Users can input a dish name, fetch details via an API, and view meal information, including category, area, and step-by-step cooking instructions.
 
 - Features
