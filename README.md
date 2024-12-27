@@ -43,20 +43,6 @@
 3. Click on the Search button.
 4. View meal details if found, or an appropriate error message if not.
 
-- Project Structure
-
-recipe-finder/
-├── src/
-│   ├── components/
-│   │   └── RecipeFinder.jsx  # Main component
-│   ├── App.js                # Application entry point
-│   ├── index.js              # React DOM rendering
-│   └── styles/               # CSS and Tailwind configurations
-├── public/
-│   ├── index.html            # HTML template
-│   └── favicon.ico           # Application icon
-└── package.json              # Project dependencies
-
 - API Reference
   -The application uses TheMealDB API to fetch meal details. The key endpoint utilized:
 
