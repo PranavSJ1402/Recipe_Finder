@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
 
 const RecipeFinder = () => {
-  const [query, setQuery] = useState(""); // Search input
-  const [suggestions, setSuggestions] = useState([]); // Suggested meals
-  const [meal, setMeal] = useState(null); // Selected meal details
-  const [loading, setLoading] = useState(false); // Loading state
-  const [error, setError] = useState(""); // Error message
+  const [query, setQuery] = useState(""); // Holds the search input value
+  const [suggestions, setSuggestions] = useState([]); // Stores meal suggestions
+  const [meal, setMeal] = useState(null); // Holds the selected meal details
+  const [loading, setLoading] = useState(false); // Tracks loading state
+  const [error, setError] = useState(""); // Holds any error message
 
-  // Fetch suggestions as the user types
+  // Fetch meal suggestions based on the query
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (query.trim().length < 2) {
-        setSuggestions([]); // Clear suggestions if query is too short
+        setSuggestions([]); // Clears suggestions if query is too short
         return;
       }
 
@@ -21,20 +21,20 @@ const RecipeFinder = () => {
         );
         const data = await response.json();
         if (data.meals) {
-          setSuggestions(data.meals.slice(0, 5)); // Show up to 5 suggestions
+          setSuggestions(data.meals.slice(0, 5)); // Limits to 5 suggestions
         } else {
-          setSuggestions([]); // No matches found
+          setSuggestions([]); // No meals found
         }
       } catch (err) {
         console.error("Error fetching suggestions:", err);
-        setSuggestions([]);
+        setSuggestions([]); // Clear suggestions on error
       }
     };
 
-    fetchSuggestions();
+    fetchSuggestions(); // Calls the fetch function when query changes
   }, [query]);
 
-  // Fetch the selected meal's details
+  // Fetch the details of the selected meal
   const fetchMeal = async (selectedMeal) => {
     const searchQuery = selectedMeal || query; // Use selected meal or search input
     if (!searchQuery.trim()) {
@@ -43,7 +43,7 @@ const RecipeFinder = () => {
     }
 
     setLoading(true);
-    setError("");
+    setError(""); // Clears any previous errors
 
     try {
       const response = await fetch(
@@ -51,8 +51,8 @@ const RecipeFinder = () => {
       );
       const data = await response.json();
       if (data.meals) {
-        setMeal(data.meals[0]); // Display the first matching meal
-        setSuggestions([]); // Clear suggestions
+        setMeal(data.meals[0]); // Sets the first matching meal
+        setSuggestions([]); // Clears suggestions once meal is selected
       } else {
         setError("No meal found with that name.");
         setMeal(null);
@@ -60,15 +60,13 @@ const RecipeFinder = () => {
     } catch (err) {
       setError("Error fetching meal details.");
     } finally {
-      setLoading(false);
+      setLoading(false); // Stops loading
     }
   };
 
-  // Break down instructions into steps
+  // Converts instructions into a list of steps
   const getInstructionsList = (instructions) =>
-    instructions
-      ? instructions.split("\n").filter((step) => step.trim())
-      : [];
+    instructions ? instructions.split("\n").filter((step) => step.trim()) : [];
 
   return (
     <div className="max-w-3xl mx-auto p-4 bg-gray-100 rounded shadow">
@@ -76,12 +74,12 @@ const RecipeFinder = () => {
         Recipe Finder
       </h1>
 
-      {/* Search bar */}
+      {/* Search bar and button */}
       <div className="relative flex items-center">
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => setQuery(e.target.value)} // Updates query on input change
           placeholder="Type a meal name..."
           className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
@@ -93,11 +91,11 @@ const RecipeFinder = () => {
         </button>
       </div>
 
-      {/* Loading and error messages */}
+      {/* Show loading or error messages */}
       {loading && <p className="mt-4 text-gray-600">Loading...</p>}
       {error && <p className="mt-4 text-red-500">{error}</p>}
 
-      {/* Meal details */}
+      {/* Display meal details */}
       {meal && (
         <div className="mt-6 bg-white p-4 rounded-md shadow-lg flex space-x-6">
           <img
@@ -124,7 +122,7 @@ const RecipeFinder = () => {
         </div>
       )}
 
-      {/* Suggestions */}
+      {/* Suggestions list */}
       {suggestions.length > 0 && (
         <ul className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-md shadow-lg z-10">
           {suggestions.map((suggestion, index) => (
