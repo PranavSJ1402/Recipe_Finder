@@ -1,16 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const RecipeFinder = () => {
-  const [query, setQuery] = useState("");
-  const [meal, setMeal] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [query, setQuery] = useState(""); // Search input
+  const [suggestions, setSuggestions] = useState([]); // Suggested meals
+  const [meal, setMeal] = useState(null); // Selected meal details
+  const [loading, setLoading] = useState(false); // Loading state
+  const [error, setError] = useState(""); // Error message
 
-  // Fetch meal details from the API
-  const fetchMeal = async () => {
-    if (!query || query.trim().length < 2) {
-      setError("Please enter a valid dish name.");
-      setMeal(null);
+  // Fetch suggestions as the user types
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (query.trim().length < 2) {
+        setSuggestions([]); // Clear suggestions if query is too short
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`
+        );
+        const data = await response.json();
+        if (data.meals) {
+          setSuggestions(data.meals.slice(0, 5)); // Show up to 5 suggestions
+        } else {
+          setSuggestions([]); // No matches found
+        }
+      } catch (err) {
+        console.error("Error fetching suggestions:", err);
+        setSuggestions([]);
+      }
+    };
+
+    fetchSuggestions();
+  }, [query]);
+
+  // Fetch the selected meal's details
+  const fetchMeal = async (selectedMeal) => {
+    const searchQuery = selectedMeal || query; // Use selected meal or search input
+    if (!searchQuery.trim()) {
+      setError("Enter a valid meal name.");
       return;
     }
 
@@ -19,94 +47,96 @@ const RecipeFinder = () => {
 
     try {
       const response = await fetch(
-        `https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`
+        `https://www.themealdb.com/api/json/v1/1/search.php?s=${searchQuery}`
       );
-      if (!response.ok) {
-        throw new Error("Failed to fetch the meal.");
-      }
       const data = await response.json();
       if (data.meals) {
-        setMeal(data.meals[0]);
+        setMeal(data.meals[0]); // Display the first matching meal
+        setSuggestions([]); // Clear suggestions
       } else {
+        setError("No meal found with that name.");
         setMeal(null);
-        setError("No such dish found.");
       }
     } catch (err) {
-      setError(err.message);
+      setError("Error fetching meal details.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Split instructions into an array of steps
-  const getInstructionsList = (instructions) => {
-    return instructions
-      ? instructions.split("\n").filter((step) => step.trim() !== "")
+  // Break down instructions into steps
+  const getInstructionsList = (instructions) =>
+    instructions
+      ? instructions.split("\n").filter((step) => step.trim())
       : [];
-  };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 font-sans bg-white rounded-lg shadow-md">
-      <h1 className="text-2xl sm:text-4xl font-bold text-center text-orange-600 mb-4 sm:mb-6">
-        Find Recipe for your Favorite Meals
+    <div className="max-w-3xl mx-auto p-4 bg-gray-100 rounded shadow">
+      <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">
+        Recipe Finder
       </h1>
 
-      {/* Search Box */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+      {/* Search bar */}
+      <div className="relative flex items-center">
         <input
           type="text"
-          placeholder="Search for a meal..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full sm:w-64 p-3 text-lg border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Type a meal name..."
+          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
-          onClick={fetchMeal}
-          className="w-full sm:w-auto py-3 px-6 bg-blue-600 text-white text-lg font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onClick={() => fetchMeal()}
+          className="ml-2 bg-blue-500 text-white p-3 rounded-md hover:bg-blue-600"
         >
           Search
         </button>
       </div>
 
-      {loading && <p className="text-center text-gray-600">Loading...</p>}
-      {error && <p className="text-center text-red-500">{error}</p>}
+      {/* Loading and error messages */}
+      {loading && <p className="mt-4 text-gray-600">Loading...</p>}
+      {error && <p className="mt-4 text-red-500">{error}</p>}
 
-      {/* Meal Details */}
+      {/* Meal details */}
       {meal && (
-        <div className="mt-6 bg-gray-50 p-4 sm:p-6 rounded-lg shadow-lg">
-          <div className="flex flex-col md:flex-row items-center">
-            <img
-              src={meal.strMealThumb}
-              alt={meal.strMeal}
-              className="w-full sm:w-80 h-80 object-cover rounded-lg shadow-md md:w-1/3 md:mr-6"
-            />
-            <div className="mt-4 md:mt-0 w-full md:w-2/3">
-              <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800">
-                {meal.strMeal}
-              </h3>
-              <p className="text-lg text-black-600 mt-2">
-                <span className="font-bold">Category: </span>
-                <span className="font-light">{meal.strCategory}</span>
-              </p>
-              <p className="text-lg text-black-600">
-                <span className="font-bold">Area: </span>
-                <span className="font-light">{meal.strArea}</span>
-              </p>
-              <h4 className="mt-4 text-xl font-medium text-gray-800">
-                Instructions:
-              </h4>
-              <ul className="list-disc pl-6 mt-2 text-gray-700">
-                {getInstructionsList(meal.strInstructions).map(
-                  (step, index) => (
-                    <li key={index} className="mb-2">
-                      {step}
-                    </li>
-                  )
-                )}
-              </ul>
-            </div>
+        <div className="mt-6 bg-white p-4 rounded-md shadow-lg flex space-x-6">
+          <img
+            src={meal.strMealThumb}
+            alt={meal.strMeal}
+            className="w-1/4 h-auto rounded-md"
+          />
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold">{meal.strMeal}</h2>
+            <p className="text-gray-600">
+              <span className="font-semibold">Category:</span> {meal.strCategory}
+            </p>
+            <p className="text-gray-600">
+              <span className="font-semibold">Area:</span> {meal.strArea}
+            </p>
+
+            <h3 className="mt-4 font-semibold">Instructions:</h3>
+            <ul className="list-disc pl-6 mt-2">
+              {getInstructionsList(meal.strInstructions).map((step, index) => (
+                <li key={index}>{step}</li>
+              ))}
+            </ul>
           </div>
         </div>
+      )}
+
+      {/* Suggestions */}
+      {suggestions.length > 0 && (
+        <ul className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-md shadow-lg z-10">
+          {suggestions.map((suggestion, index) => (
+            <li
+              key={index}
+              className="p-2 hover:bg-blue-100 cursor-pointer"
+              onClick={() => fetchMeal(suggestion.strMeal)} // Select suggestion
+            >
+              {suggestion.strMeal}
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
